@@ -1,32 +1,19 @@
 import { CodeMapping, ExtraServiceScript, forEachEmbeddedCode, type LanguagePlugin, type VirtualCode } from '@volar/language-core';
 import ts from 'typescript';
-import * as html from 'vscode-html-languageservice';
 
 export const treaty: LanguagePlugin = {
 	createVirtualCode(_id, languageId, snapshot) {
 		if (languageId === 'treaty') {
 			return {
 				id: 'root',
-				languageId,
+				languageId: 'treaty',
 				snapshot,
 				embeddedCodes: [
 					...getVirtualCssFiles(snapshot.getText(0, snapshot.getLength())),
 					getVirtualTsFile(snapshot.getText(0, snapshot.getLength())),
 					getVirtualHtmlFile(snapshot.getText(0, snapshot.getLength())),
 				].filter((v): v is VirtualCode => !!v),
-				mappings: [{
-					sourceOffsets: [0],
-					generatedOffsets: [0],
-					lengths: [snapshot.getLength()],
-					data: {
-						completion: true,
-						format: true,
-						navigation: true,
-						semantic: true,
-						structure: true,
-						verification: true,
-					},
-				}],
+				mappings: [],
 				codegenStacks: []
 			};
 		}
@@ -116,21 +103,48 @@ function* getVirtualCssFiles(content: string): Generator<VirtualCode> {
 }
 
 function getVirtualTsFile(code: string): VirtualCode {
-	const cssRegex = /<style(?:\s+lang="(css|scss)")?[^>]*>([\s\S]*?)<\/style>/g;
 	const angularHtmlRegex = /<([A-Za-z0-9\-_]+)(\s+[^>]*?(\{\{.*?\}\}|[\[\(]\(?.+?\)?[\]\)]|[\*\#][A-Za-z0-9\-_]+=".*?"))*[\s\S]*?<\/\1>/g;
+	let modifyCode = code;
 
-	let modifiedCode = code;
-	let mappings: CodeMapping[] = [];
+	// Track removed ranges to adjust TypeScript content positions
+	let removedRanges: { start: number; end: number; }[] = [];
 
-	// First, remove CSS content and collect its mappings
-	modifiedCode = modifiedCode.replace(cssRegex, (match, lang, css, offset) => {
-		// Skip CSS content, but record its position for mapping adjustments
-		const startOffset = offset;
-		const endOffset = startOffset + match.length;
+
+
+	const noneTSCode = [...code.matchAll(angularHtmlRegex)];
+
+	for (let i = 0; i < noneTSCode.length; i++) {
+		const ingnoreCode = noneTSCode[i];
+		if (ingnoreCode.index !== undefined) {
+			const matchText = ingnoreCode[1];
+			const offset = ingnoreCode.index + ingnoreCode[0].indexOf(matchText);
+			removedRanges.push({ start: offset, end: offset + matchText.length });
+			modifyCode.replace(matchText, '');
+		}
+	}
+
+	removedRanges.sort((a, b) => a.start - b.start);
+
+	const adjustPosition = (pos: number) => {
+		for (let range of removedRanges) {
+			if (pos > range.end) {
+				pos -= (range.end - range.start);
+			} else if (pos > range.start) {
+				pos = range.start;
+				break;
+			}
+		}
+		return pos;
+	};
+
+	let mappings = [];
+	if (removedRanges.length > 0) {
+		let startPos = adjustPosition(0);
+		let endPos = adjustPosition(modifyCode.length);
 		mappings.push({
-			sourceOffsets: [startOffset],
-			generatedOffsets: [0], // No content generated for CSS blocks
-			lengths: [endOffset - startOffset],
+			sourceOffsets: [startPos],
+			generatedOffsets: [0],
+			lengths: [endPos - startPos],
 			data: {
 				completion: true,
 				format: true,
@@ -140,42 +154,30 @@ function getVirtualTsFile(code: string): VirtualCode {
 				verification: true,
 			},
 		});
-		return ''; // Remove the CSS content
-	});
+	}
 
-	// Process HTML (Angular templates) and adjust mappings accordingly
-	let totalRemovedLength = 0;
-	modifiedCode = modifiedCode.replace(angularHtmlRegex, (match, p1, p2, offset) => {
-		const startOffset = offset - totalRemovedLength;
-		const endOffset = startOffset + match.length;
-		totalRemovedLength += match.length;
-
-		// Adjust mappings for HTML content
-		mappings.push({
-			sourceOffsets: [offset],
-			generatedOffsets: [startOffset], // Adjust based on removed content
-			lengths: [match.length],
-			data: {
-				completion: true,
-				format: true,
-				navigation: true,
-				semantic: true,
-				structure: true,
-				verification: true,
-			},
-		});
-		return match; // Keep the HTML content
-	});
-
-	// Create a virtual code object for TypeScript based on modifiedCode
 	return {
 		id: 'script_ts',
 		languageId: 'typescript',
-		snapshot: ts.ScriptSnapshot.fromString(modifiedCode),
+		snapshot: {
+			getText(start, end) {
+				return code.substring(start, end);
+			},
+			getLength() {
+				return code.length;
+			},
+			getChangeRange() {
+				return undefined;
+			},
+		},
 		mappings,
 		embeddedCodes: [],
 	};
 }
+
+
+
+
 
 
 
