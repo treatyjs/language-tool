@@ -10,8 +10,8 @@ export const treaty: LanguagePlugin = {
 				snapshot,
 				embeddedCodes: [
 					...getVirtualCssFiles(snapshot.getText(0, snapshot.getLength())),
-					getVirtualTsFile(snapshot.getText(0, snapshot.getLength())),
 					getVirtualHtmlFile(snapshot.getText(0, snapshot.getLength())),
+					getVirtualTsFile(snapshot.getText(0, snapshot.getLength())),
 				].filter((v): v is VirtualCode => !!v),
 				mappings: [],
 				codegenStacks: []
@@ -22,8 +22,8 @@ export const treaty: LanguagePlugin = {
 		virtualCode.snapshot = snapshot;
 		virtualCode.embeddedCodes = [
 			...getVirtualCssFiles(snapshot.getText(0, snapshot.getLength())),
-			getVirtualTsFile(snapshot.getText(0, snapshot.getLength())),
 			getVirtualHtmlFile(snapshot.getText(0, snapshot.getLength())),
+			getVirtualTsFile(snapshot.getText(0, snapshot.getLength())),
 		].filter((v): v is VirtualCode => !!v);
 		return virtualCode;
 	},
@@ -101,50 +101,51 @@ function* getVirtualCssFiles(content: string): Generator<VirtualCode> {
 		}
 	}
 }
-
 function getVirtualTsFile(code: string): VirtualCode {
-	const angularHtmlRegex = /<([A-Za-z0-9\-_]+)(\s+[^>]*?(\{\{.*?\}\}|[\[\(]\(?.+?\)?[\]\)]|[\*\#][A-Za-z0-9\-_]+=".*?"))*[\s\S]*?<\/\1>/g;
-	let modifyCode = code;
+	const cssRegex = /<style(?:\s+lang="(css|scss)")?[^>]*>([\s\S]*?)<\/style>/g;
+	const angularHtmlRegex = /<(?!style)([A-Za-z0-9\-_]+)(\s+[^>]*?(\{\{.*?\}\}|[\[\(]\(?.+?\)?[\]\)]|[\*\#][A-Za-z0-9\-_]+=".*?"))*[\s\S]*?<\/\1>/g;
 
-	// Track removed ranges to adjust TypeScript content positions
-	let removedRanges: { start: number; end: number; }[] = [];
+	let lastMatchEnd = 0;
+	const matches = [...code.matchAll(cssRegex), ...code.matchAll(angularHtmlRegex)];
+	let combinedCode = '';
+	let mappings = [];
+	let offsetAdjustment = 0;
 
+	for (let i = 0; i < matches.length; i++) {
+		const match = matches[i];
+		if (match.index > lastMatchEnd) {
+			const snippet = code.substring(lastMatchEnd, match.index);
+			const snippetStart = lastMatchEnd;
+			const snippetEnd = match.index;
 
+			combinedCode += snippet;
 
-	const noneTSCode = [...code.matchAll(angularHtmlRegex)];
+			mappings.push({
+				sourceOffsets: [snippetStart],
+				generatedOffsets: [offsetAdjustment],
+				lengths: [snippetEnd - snippetStart],
+				data: {
+					completion: true,
+					format: true,
+					navigation: true,
+					semantic: true,
+					structure: true,
+					verification: true,
+				},
+			});
 
-	for (let i = 0; i < noneTSCode.length; i++) {
-		const ingnoreCode = noneTSCode[i];
-		if (ingnoreCode.index !== undefined) {
-			const matchText = ingnoreCode[1];
-			const offset = ingnoreCode.index + ingnoreCode[0].indexOf(matchText);
-			removedRanges.push({ start: offset, end: offset + matchText.length });
-			modifyCode.replace(matchText, '');
+			offsetAdjustment += snippet.length;
 		}
+		lastMatchEnd = match.index + match[0].length;
 	}
 
-	removedRanges.sort((a, b) => a.start - b.start);
-
-	const adjustPosition = (pos: number) => {
-		for (let range of removedRanges) {
-			if (pos > range.end) {
-				pos -= (range.end - range.start);
-			} else if (pos > range.start) {
-				pos = range.start;
-				break;
-			}
-		}
-		return pos;
-	};
-
-	let mappings = [];
-	if (removedRanges.length > 0) {
-		let startPos = adjustPosition(0);
-		let endPos = adjustPosition(modifyCode.length);
+	if (lastMatchEnd < code.length) {
+		const snippet = code.substring(lastMatchEnd);
+		combinedCode += snippet;
 		mappings.push({
-			sourceOffsets: [startPos],
-			generatedOffsets: [0],
-			lengths: [endPos - startPos],
+			sourceOffsets: [lastMatchEnd],
+			generatedOffsets: [offsetAdjustment],
+			lengths: [snippet.length],
 			data: {
 				completion: true,
 				format: true,
@@ -157,82 +158,72 @@ function getVirtualTsFile(code: string): VirtualCode {
 	}
 
 	return {
-		id: 'script_ts',
+		id: 'combined_ts',
 		languageId: 'typescript',
 		snapshot: {
 			getText(start, end) {
-				return code.substring(start, end);
+				return combinedCode.substring(start, end);
 			},
 			getLength() {
-				return code.length;
+				return combinedCode.length;
 			},
 			getChangeRange() {
 				return undefined;
 			},
 		},
-		mappings,
+		mappings: mappings,
 		embeddedCodes: [],
 	};
 }
-
-
-
-
-
-
-
 function getVirtualHtmlFile(code: string): VirtualCode {
 	const angularHtmlRegex = /<(?!style)([A-Za-z0-9\-_]+)(\s+[^>]*?(\{\{.*?\}\}|[\[\(]\(?.+?\)?[\]\)]|[\*\#][A-Za-z0-9\-_]+=".*?"))*[\s\S]*?<\/\1>/g;
 
+	let combinedHtml = '';
 	let mappings = [];
-	let totalContent = '';
-	let totalRemovedLength = 0;
-	let matchStarts = [];
-	let matchEnds = [];
+	let offsetAdjustment = 0;
 
-	let matches;
-	while ((matches = angularHtmlRegex.exec(code)) !== null) {
-		const [fullMatch] = matches;
-		const startOffset = matches.index;
-		const endOffset = startOffset + fullMatch.length;
+	const htmlBlocks = [...code.matchAll(angularHtmlRegex)];
 
-		matchStarts.push(startOffset - totalRemovedLength);
-		matchEnds.push(endOffset - totalRemovedLength);
+	for (let i = 0; i < htmlBlocks.length; i++) {
+		const htmlBlock = htmlBlocks[i];
+		const matchText = htmlBlock[0];
+		const originalOffset = htmlBlock.index !== undefined ? htmlBlock.index : 0;
 
-		totalContent += fullMatch;
-		totalRemovedLength += code.substring(0, endOffset).length - fullMatch.length;
-	}
+		combinedHtml += matchText;
 
-	for (let i = 0; i < matchStarts.length; i++) {
 		mappings.push({
-			sourceOffsets: [matchStarts[i]],
-			generatedOffsets: [matchStarts[i]],
-			lengths: [matchEnds[i] - matchStarts[i]],
+			sourceOffsets: [originalOffset],
+			generatedOffsets: [offsetAdjustment],
+			lengths: [matchText.length],
 			data: {
-				completion: true,
-				format: true,
-				navigation: true,
-				semantic: true,
-				structure: true,
 				verification: true,
+				completion: true,
+				semantic: true,
+				navigation: true,
+				structure: true,
+				format: true,
 			},
 		});
+
+		offsetAdjustment += matchText.length;
 	}
 
-	// const document = html.TextDocument.create('', 'html', 0, totalContent);
-	// const htmlDocument = htmlLs.parseHTMLDocument(document)
-
 	return {
-		id: 'html',
+		id: 'combined_html',
 		languageId: 'html',
 		snapshot: {
-			getText: (start, end) => totalContent.substring(start, end),
-			getLength: () => totalContent.length,
-			getChangeRange: () => undefined,
+			getText(start, end) {
+				return combinedHtml.substring(start, end);
+			},
+			getLength() {
+				return combinedHtml.length;
+			},
+			getChangeRange() {
+				return undefined;
+			},
 		},
 		mappings: mappings,
 		embeddedCodes: [],
-		// htmlDocument,
 	};
 }
 

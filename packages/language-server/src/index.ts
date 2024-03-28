@@ -24,35 +24,6 @@ connection.onInitialize(params => {
 					createHtmlService(),
 					createCssService(),
 					...createTypeScriptServices(tsdk.typescript, {}),
-					// {
-					// 	create(context) {
-					// 		return {
-					// 			provideDiagnostics(document) {
-					// 				const virtualCode = context.documents.getVirtualCodeByUri(document.uri)[0] as VirtualCode | Html1Code | undefined;
-					// 				if (!virtualCode || !('htmlDocument' in virtualCode)) {
-					// 					return;
-					// 				}
-					// 				const styleNodes = virtualCode.htmlDocument.roots.filter(root => root.tag === 'style');
-					// 				if (styleNodes.length <= 1) {
-					// 					return;
-					// 				}
-					// 				const errors: Diagnostic[] = [];
-					// 				for (let i = 1; i < styleNodes.length; i++) {
-					// 					errors.push({
-					// 						severity: 2,
-					// 						range: {
-					// 							start: document.positionAt(styleNodes[i].start),
-					// 							end: document.positionAt(styleNodes[i].end),
-					// 						},
-					// 						source: 'html1',
-					// 						message: 'Only one style tag is allowed.',
-					// 					});
-					// 				}
-					// 				return errors;
-					// 			},
-					// 		}
-					// 	},
-					// },
 				];
 			},
 		},
