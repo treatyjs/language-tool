@@ -40,6 +40,7 @@ export const treaty: LanguagePlugin = {
 				}
 			}
 		},
+		
 		getExtraScripts(fileName, root) {
 			const scripts: ExtraServiceScript[] = [];
 			for (const code of forEachEmbeddedCode(root)) {

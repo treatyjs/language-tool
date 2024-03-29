@@ -15,20 +15,21 @@ connection.onInitialize(params => {
 		params,
 		createTypeScriptProjectProviderFactory(tsdk.typescript, tsdk.diagnosticMessages),
 		{
-			watchFileExtensions: ['js', 'cjs', 'mjs', 'ts', 'cts', 'mts', 'js', 'ts', 'json', 'treaty'],
+			watchFileExtensions: ['treaty'],
 			getLanguagePlugins() {
 				return [treaty];
 			},
 			getServicePlugins() {
 				return [
-					createHtmlService(),
 					createCssService(),
+					createHtmlService(),
 					...createTypeScriptServices(tsdk.typescript),
 				];
 			},
 		},
 	);
 });
+
 
 connection.onInitialized(server.initialized);
 
