@@ -1,4 +1,4 @@
-import { CodeMapping, ExtraServiceScript, forEachEmbeddedCode, type LanguagePlugin, type VirtualCode } from '@volar/language-core';
+import { ExtraServiceScript, forEachEmbeddedCode, type LanguagePlugin, type VirtualCode } from '@volar/language-core';
 import ts from 'typescript';
 
 export const treaty: LanguagePlugin = {
@@ -29,8 +29,16 @@ export const treaty: LanguagePlugin = {
 	},
 	typescript: {
 		extraFileExtensions: [{ extension: 'treaty', isMixedContent: true, scriptKind: 7 satisfies ts.ScriptKind.Deferred }],
-		getScript() {
-			return undefined;
+		getScript(rootVirtualCode) {
+			for (const code of forEachEmbeddedCode(rootVirtualCode)) {
+				if (code.id === 'ts') {
+					return {
+						code,
+						scriptKind: 3,
+						extension: '.ts',
+					};
+				}
+			}
 		},
 		getExtraScripts(fileName, root) {
 			const scripts: ExtraServiceScript[] = [];

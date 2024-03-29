@@ -23,7 +23,7 @@ connection.onInitialize(params => {
 				return [
 					createHtmlService(),
 					createCssService(),
-					...createTypeScriptServices(tsdk.typescript, {}),
+					...createTypeScriptServices(tsdk.typescript),
 				];
 			},
 		},
