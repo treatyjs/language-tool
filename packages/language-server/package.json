@@ -1,5 +1,5 @@
 {
-	"name": "@html1/language-server",
+	"name": "@treaty/language-server",
 	"version": "0.0.1",
 	"main": "out/index.js",
 	"license": "MIT",
@@ -7,10 +7,16 @@
 		"out/**/*.js",
 		"out/**/*.d.ts"
 	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/jordan-hall/treaty-language-tools.git",
+		"directory": "packages/language-server"
+	},
 	"bin": {
-		"html1-language-server": "./bin/html1-language-server.js"
+		"treaty-language-server": "./bin/treaty-language-server.js"
 	},
 	"dependencies": {
+		"@angular-eslint/bundled-angular-compiler": "^17.3.0",
 		"@volar/language-core": "~2.1.0",
 		"@volar/language-server": "~2.1.0",
 		"@volar/language-service": "~2.1.0",
@@ -19,5 +25,8 @@
 		"volar-service-html": "volar-2.1",
 		"volar-service-typescript": "volar-2.1",
 		"vscode-html-languageservice": "^5.1.1"
+	},
+	"devDependencies": {
+		"@angular/compiler": "^17.2.1"
 	}
 }

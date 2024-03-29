@@ -1,6 +1,6 @@
 {
 	"private": true,
-	"name": "vscode-html1",
+	"name": "vscode-treaty",
 	"version": "0.0.1",
 	"repository": {
 		"type": "git",
@@ -10,26 +10,81 @@
 	"categories": [
 		"Programming Languages"
 	],
-	"displayName": "HTML1 Language Features",
-	"description": "HTML1 Language Features",
-	"author": "volarjs",
-	"publisher": "volarjs",
+	"displayName": "treaty Language Features (Volar)",
+	"description": "treaty Language Features (Volar)",
+	"author": "treaty",
+	"publisher": "treaty",
 	"engines": {
 		"vscode": "^1.82.0"
 	},
 	"activationEvents": [
-		"onLanguage:html1"
+		"onLanguage:html",
+		"onLanguage:typescript",
+		"onLanguage:treaty"
 	],
 	"main": "./dist/client.js",
 	"contributes": {
 		"languages": [
 			{
-				"id": "html1",
+				"id": "angular-directives"
+			},
+			{
+				"id": "angular-interpolations"
+			},
+			{
+				"id": "html",
+				"configuration": "./languages/angular-template-language-configuration.json"
+			},
+			{
+				"id": "treaty",
 				"extensions": [
-					".html1"
+					".treaty"
 				]
 			}
-		]
+		],
+		"grammars": [
+			{
+				"language": "angular-directives",
+				"scopeName": "text.html.angular.directives",
+				"path": "./syntaxes/angular-directives.json",
+				"injectTo": [
+					"text.html.derivative"
+				],
+				"embeddedLanguages": {
+					"source.ts": "typescript"
+				}
+			},
+			{
+				"language": "angular-interpolations",
+				"scopeName": "angular.interpolations",
+				"path": "./syntaxes/angular-interpolations.json",
+				"injectTo": [
+					"text.html.derivative"
+				]
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "Volar-treaty",
+			"properties": {
+				"volar.takeOverMode.extension": {
+					"type": "string",
+					"default": "treaty.vscode-angular",
+					"description": "The extension that take over language support for *.ts. and *.treaty"
+				},
+				"volar-treaty-language-server.trace.server": {
+					"scope": "window",
+					"type": "string",
+					"enum": [
+						"off",
+						"messages",
+						"verbose"
+					],
+					"default": "off",
+					"description": "Traces the communication between VS Code and the language server."
+				}
+			}
+		}
 	},
 	"scripts": {
 		"build": "node scripts/build -- --minify",
@@ -38,7 +93,7 @@
 		"release": "npm run build && vsce publish --pre-release"
 	},
 	"devDependencies": {
-		"@html1/language-server": "workspace:*",
+		"@treaty/language-server": "workspace:*",
 		"@types/vscode": "^1.82.0",
 		"@volar/language-server": "~2.1.0",
 		"@volar/vscode": "~2.1.0",

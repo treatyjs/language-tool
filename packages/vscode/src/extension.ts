@@ -1,5 +1,5 @@
 import * as serverProtocol from '@volar/language-server/protocol';
-import { activateAutoInsertion, createLabsInfo, getTsdk } from '@volar/vscode';
+import { activateAutoInsertion, createLabsInfo, getTsdk, } from '@volar/vscode';
 import * as vscode from 'vscode';
 import * as lsp from 'vscode-languageclient/node';
 
@@ -23,7 +23,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		},
 	};
 	const clientOptions: lsp.LanguageClientOptions = {
-		documentSelector: [{ language: 'html1' }],
+		documentSelector: [{ language: 'treaty' }, { language: 'html' }, { language: 'ts' }],
 		initializationOptions: {
 			typescript: {
 				tsdk: (await getTsdk(context)).tsdk,
@@ -31,18 +31,17 @@ export async function activate(context: vscode.ExtensionContext) {
 		},
 	};
 	client = new lsp.LanguageClient(
-		'html1-language-server',
-		'HTML1 Language Server',
+		'treaty-language-server',
+		'Treaty Language Server',
 		serverOptions,
 		clientOptions,
 	);
 	await client.start();
 
 	// support for auto close tag
-	activateAutoInsertion('html1', client);
+	activateAutoInsertion('treaty', client);
 
-	// support for https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volarjs-labs
-	// ref: https://twitter.com/johnsoncodehk/status/1656126976774791168
+
 	const labsInfo = createLabsInfo(serverProtocol);
 	labsInfo.addLanguageClient(client);
 	return labsInfo.extensionExports;
