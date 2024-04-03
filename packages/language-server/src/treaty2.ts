@@ -49,7 +49,7 @@ export function getTreatyLanguageModule(): LanguagePlugin<TreatyVirtualCode> {
 				return scripts;
 			},
 		},
-	}
+	};
 }
 
 export class TreatyVirtualCode implements VirtualCode {
@@ -153,7 +153,7 @@ export class TreatyVirtualCode implements VirtualCode {
 		}
 
 		return {
-			id: 'combined_ts',
+			id: 'angular/ts',
 			languageId: 'typescript',
 			snapshot: {
 				getText(start, end) {
@@ -204,7 +204,7 @@ export class TreatyVirtualCode implements VirtualCode {
 		}
 
 		return {
-			id: 'combined_html',
+			id: 'angular/html',
 			languageId: 'html',
 			snapshot: {
 				getText(start, end) {

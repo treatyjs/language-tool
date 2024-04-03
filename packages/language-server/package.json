@@ -24,7 +24,10 @@
 		"volar-service-emmet": "volar-2.1",
 		"volar-service-html": "volar-2.1",
 		"volar-service-typescript": "volar-2.1",
-		"vscode-html-languageservice": "^5.1.1"
+		"vscode-html-languageservice": "^5.1.1",
+		"volar-service-typescript-twoslash-queries": "^0.0.34",
+		"@volar/kit": "^2.1.6",
+		"fast-glob": "^3.3.2"
 	},
 	"devDependencies": {
 		"@angular/compiler": "^17.2.1"

@@ -1,5 +1,5 @@
 import * as serverProtocol from '@volar/language-server/protocol';
-import { activateAutoInsertion, createLabsInfo, getTsdk, } from '@volar/vscode';
+import { activateAutoInsertion, activateTsConfigStatusItem, activateTsVersionStatusItem, createLabsInfo, getTsdk, } from '@volar/vscode';
 import * as vscode from 'vscode';
 import * as lsp from 'vscode-languageclient/node';
 
@@ -23,13 +23,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		},
 	};
 	const clientOptions: lsp.LanguageClientOptions = {
-		documentSelector: [{ language: 'treaty' }, { language: 'html' }, { language: 'ts' }],
+		documentSelector: [{ language: 'treaty' }, { language: 'html' }, { language: 'ts' }, { language: 'typescript' }],
 		initializationOptions: {
 			typescript: {
 				tsdk: (await getTsdk(context)).tsdk,
 			},
 		},
 	};
+
 	client = new lsp.LanguageClient(
 		'treaty-language-server',
 		'Treaty Language Server',
@@ -37,10 +38,15 @@ export async function activate(context: vscode.ExtensionContext) {
 		clientOptions,
 	);
 	await client.start();
-
 	// support for auto close tag
 	activateAutoInsertion('treaty', client);
-
+	activateTsVersionStatusItem(
+		'Treaty',
+		'Treaty.selectTypescriptVersion',
+		context,
+		client,
+		(text) => text
+	);
 
 	const labsInfo = createLabsInfo(serverProtocol);
 	labsInfo.addLanguageClient(client);
