@@ -17,17 +17,22 @@
 	},
 	"dependencies": {
 		"@angular-eslint/bundled-angular-compiler": "^17.3.0",
-		"@volar/language-core": "~2.1.0",
-		"@volar/language-server": "~2.1.0",
-		"@volar/language-service": "~2.1.0",
-		"volar-service-css": "volar-2.1",
-		"volar-service-emmet": "volar-2.1",
-		"volar-service-html": "volar-2.1",
-		"volar-service-typescript": "volar-2.1",
+		"@angular/language-service": "^17.2.1",
+		"@angular/language-server": "^17.2.1",
+		"@volar/language-core": "^2.1.6",
+		"@volar/language-server": "^2.1.6",
+		"@volar/language-service": "^2.1.6",
+		"volar-service-css": "^0.0.34",
+		"volar-service-emmet": "^0.0.34",
+		"volar-service-html": "0.0.34",
+		"volar-service-prettier": "0.0.34",
+		"volar-service-typescript": "0.0.34",
+		"vscode-uri": "^3.0.8",
 		"vscode-html-languageservice": "^5.1.1",
 		"volar-service-typescript-twoslash-queries": "^0.0.34",
 		"@volar/kit": "^2.1.6",
-		"fast-glob": "^3.3.2"
+		"fast-glob": "^3.3.2",
+		"chokidar": "^3.6.0"
 	},
 	"devDependencies": {
 		"@angular/compiler": "^17.2.1"

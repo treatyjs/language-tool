@@ -1,8 +1,9 @@
-import { CodeInformation, LanguagePlugin, Mapping, Stack, forEachEmbeddedCode, type VirtualCode } from '@volar/language-core';
-import ts from 'typescript';
+import { CodeInformation, LanguagePlugin, Mapping, Stack, forEachEmbeddedCode, type VirtualCode,  } from '@volar/language-core';
 import type { TmplAstNode, TmplAstTemplate, ParsedTemplate, ParseSourceSpan, TmplAstDeferredBlock, TmplAstDeferredBlockError, TmplAstDeferredBlockLoading, TmplAstDeferredBlockPlaceholder, TmplAstDeferredTrigger, TmplAstForLoopBlock, TmplAstForLoopBlockEmpty, TmplAstIfBlock, TmplAstIfBlockBranch, TmplAstSwitchBlock, TmplAstSwitchBlockCase, TmplAstUnknownBlock } from '@angular/compiler';
 import { parseTemplate } from '@angular-eslint/bundled-angular-compiler';
 import { Codegen } from './angular';
+import type ts from 'typescript';
+
 
 export function getAngularHtmlLanguageModule(ts: typeof import('typescript')): LanguagePlugin<AngularHtmlVirtualCode> {
 	return {
@@ -16,6 +17,20 @@ export function getAngularHtmlLanguageModule(ts: typeof import('typescript')): L
 			return angular;
 		},
 
+		typescript: {
+			extraFileExtensions: [{ extension: 'html', isMixedContent: true, scriptKind: 7 }],
+			getScript(angularCode) {
+				for (const code of forEachEmbeddedCode(angularCode)) {
+					if (code.languageId === 'typescript') {
+						return {
+							code,
+							extension: '.ts',
+							scriptKind: 3 satisfies ts.ScriptKind.TS,
+						};
+					}
+				}
+			},
+		}
 	};
 }
 
@@ -55,11 +70,11 @@ export class AngularHtmlVirtualCode implements VirtualCode {
 		this.embeddedCodes = [
 			{
 				id: fileName + '.__template.ts',
+				languageId: 'typescript',
 				snapshot: this.ts.ScriptSnapshot.fromString(generated.codegen.text),
 				mappings: generated.codegen.mappings,
 				embeddedCodes: [],
 				codegenStacks: [],
-				languageId: 'typescript',
 			},
 		];
 		this.parsed = generated.parsed;

@@ -4,6 +4,7 @@ import { Component, signal } from '@angular/core'
     standalone: true,
     selector: 'test',
     templateUrl: './treat-test.component.html',
+    
 })
 export class ExampleComponent {
     counter = signal(0);

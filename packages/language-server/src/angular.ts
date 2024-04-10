@@ -1,25 +1,35 @@
 import { CodeInformation, LanguagePlugin, Mapping, forEachEmbeddedCode, type VirtualCode } from '@volar/language-core';
 import path from 'path';
-import ts from 'typescript';
+import type ts from 'typescript';
 
-export function getTypescriptLanguageModule(ts: typeof import('typescript')): LanguagePlugin<TypescriptVirtualCode> {
+
+export function getTypescriptLanguageModule(ts: typeof import('typescript')): LanguagePlugin<AngularTypescriptVirtualCode> {
 	return {
 		createVirtualCode(fileId, languageId, snapshot) {
 			if (languageId === 'typescript') {
 				const text = snapshot.getText(0, snapshot.getLength());
 				const ast = ts.createSourceFile(fileId, text, ts.ScriptTarget.Latest);
-				return new TypescriptVirtualCode(fileId, snapshot, ast);
+				return new AngularTypescriptVirtualCode(fileId, snapshot, ast, ts);
 			}
 		},
 		updateVirtualCode(_fileId, angular, snapshot) {
 			angular.update(snapshot)
 			return angular;
 		},
-
+		typescript: {
+			extraFileExtensions: [],
+			getScript(code) {
+				return {
+					code,
+					extension: '.ts',
+					scriptKind: 3 satisfies ts.ScriptKind.TS,
+				};
+			},
+		}
 	};
 }
 
-export class TypescriptVirtualCode implements VirtualCode {
+export class AngularTypescriptVirtualCode implements VirtualCode {
 	id = 'root';
 	languageId = 'typescript';
 	mappings!: Mapping<CodeInformation>[];
@@ -30,8 +40,9 @@ export class TypescriptVirtualCode implements VirtualCode {
 		public fileName: string,
 		public snapshot: ts.IScriptSnapshot,
 		public ast: ts.SourceFile,
+		private ts: typeof import('typescript'),
 	) {
-		const gen = this.onSnapshotUpdated(ast);
+		const gen = this.onSnapshotUpdated();
 		this.snapshot = ts.ScriptSnapshot.fromString(gen.text);
 		this.mappings = gen.mappings;
 	}
@@ -40,20 +51,19 @@ export class TypescriptVirtualCode implements VirtualCode {
 		const text = snapshot.getText(0, snapshot.getLength());
 		const change = snapshot.getChangeRange(this.snapshot);
 
-		// incremental update for better performance
 		this.ast = change
 			? this.ast.update(text, change)
-			: ts.createSourceFile(this.fileName, text, ts.ScriptTarget.Latest);
+			: this.ts.createSourceFile(this.fileName, text, this.ts.ScriptTarget.Latest);
 		this.snapshot = snapshot;
 
-		const gen = this.onSnapshotUpdated(this.ast);
-		this.snapshot = ts.ScriptSnapshot.fromString(gen.text);
+		const gen = this.onSnapshotUpdated();
+		this.snapshot = this.ts.ScriptSnapshot.fromString(gen.text);
 		this.mappings = gen.mappings;
 	}
 
 
-	onSnapshotUpdated(ast: ts.SourceFile) {
-
+	onSnapshotUpdated() {
+		const ast = this.ast;
 		const classComponents: {
 			templateUrl?: string,
 			selectorNode?: ts.StringLiteral,
@@ -63,14 +73,14 @@ export class TypescriptVirtualCode implements VirtualCode {
 		}[] = [];
 
 		ast.forEachChild(node => {
-			if (ts.isClassDeclaration(node)) {
-				if (node.modifiers?.find(mod => mod.kind === ts.SyntaxKind.ExportKeyword)) {
-					const decorator = node.modifiers.find((mod) => ts.isDecorator(mod)) as ts.Decorator | undefined;
+			if (this.ts.isClassDeclaration(node)) {
+				if (node.modifiers?.find(mod => mod.kind === this.ts.SyntaxKind.ExportKeyword)) {
+					const decorator = node.modifiers.find((mod) => this.ts.isDecorator(mod)) as ts.Decorator | undefined;
 					if (
 						decorator
-						&& ts.isCallExpression(decorator.expression)
+						&& this.ts.isCallExpression(decorator.expression)
 						&& decorator.expression.arguments.length
-						&& ts.isObjectLiteralExpression(decorator.expression.arguments[0])
+						&& this.ts.isObjectLiteralExpression(decorator.expression.arguments[0])
 					) {
 						const decoratorName = decorator.expression.expression.getText(ast);
 						const className = node.name?.getText(ast) || '';
@@ -80,19 +90,19 @@ export class TypescriptVirtualCode implements VirtualCode {
 							urlNodes: [],
 						};
 						const selectorProp = decorator.expression.arguments[0].properties.find((prop) => prop.name?.getText(ast) === 'selector');
-						if (selectorProp && ts.isPropertyAssignment(selectorProp) && ts.isStringLiteral(selectorProp.initializer)) {
+						if (selectorProp && this.ts.isPropertyAssignment(selectorProp) && this.ts.isStringLiteral(selectorProp.initializer)) {
 							classComponent.selectorNode = selectorProp.initializer;
 						}
 						const templateUrlProp = decorator.expression.arguments[0].properties.find((prop) => prop.name?.getText(ast) === 'templateUrl');
-						if (templateUrlProp && ts.isPropertyAssignment(templateUrlProp) && ts.isStringLiteral(templateUrlProp.initializer)) {
+						if (templateUrlProp && this.ts.isPropertyAssignment(templateUrlProp) && this.ts.isStringLiteral(templateUrlProp.initializer)) {
 							const templateUrl = path.resolve(path.dirname(ast.fileName), templateUrlProp.initializer.text);
 							classComponent.templateUrl = templateUrl;
 							classComponent.urlNodes.push(templateUrlProp.initializer);
 						}
 						const styleUrlsProp = decorator.expression.arguments[0].properties.find((prop) => prop.name?.getText(ast) === 'styleUrls');
-						if (styleUrlsProp && ts.isPropertyAssignment(styleUrlsProp) && ts.isArrayLiteralExpression(styleUrlsProp.initializer)) {
+						if (styleUrlsProp && this.ts.isPropertyAssignment(styleUrlsProp) && this.ts.isArrayLiteralExpression(styleUrlsProp.initializer)) {
 							for (const url of styleUrlsProp.initializer.elements) {
-								if (ts.isStringLiteral(url)) {
+								if (this.ts.isStringLiteral(url)) {
 									classComponent.urlNodes.push(url);
 								}
 							}

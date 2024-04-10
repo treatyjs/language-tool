@@ -2,7 +2,7 @@
 	"private": true,
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/volarjs/starter.git"
+		"url": "hhttps://github.com/treatyjs/language-tool.git"
 	},
 	"scripts": {
 		"build": "cd ./packages/vscode && npm run build",

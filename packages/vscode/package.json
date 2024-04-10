@@ -63,6 +63,12 @@
 				]
 			}
 		],
+		"typescriptServerPlugins":[
+			{
+				"name": "treaty-ts-plugin-bundle",
+				"enableForWorkspaceTypeScriptVersions": true
+			}
+		],
 		"configuration": {
 			"type": "object",
 			"title": "Volar-treaty",
